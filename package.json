@@ -2,10 +2,10 @@
   "name": "bfcn-backend",
   "version": "1.0.0",
   "description": "BFCN Backend API",
-  "main": "server.js",
+  "main": "app.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js"
+    "start": "node app.js",
+    "dev": "node --watch app.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
