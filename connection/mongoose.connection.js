@@ -3,6 +3,12 @@ const config = require('../config');
 const logger = require('../utils/logger');
 
 const connectDB = async () => {
+  if (!config.mongodb.uri) {
+    logger.error('MONGODB_URI environment variable is not set. MongoDB connection skipped.');
+    logger.warn('Set MONGODB_URI in your Render dashboard Environment Variables.');
+    return;
+  }
+
   try {
     const options = {
       maxPoolSize: 10,
@@ -11,10 +17,9 @@ const connectDB = async () => {
     };
 
     await mongoose.connect(config.mongodb.uri, options);
-    
+
     logger.info('MongoDB connected successfully');
-    
-    // Handle connection events
+
     mongoose.connection.on('error', (err) => {
       logger.error('MongoDB connection error:', err);
     });
@@ -23,7 +28,6 @@ const connectDB = async () => {
       logger.warn('MongoDB disconnected');
     });
 
-    // Graceful shutdown
     process.on('SIGINT', async () => {
       await mongoose.connection.close();
       logger.info('MongoDB connection closed through app termination');
@@ -31,8 +35,8 @@ const connectDB = async () => {
     });
 
   } catch (err) {
-    logger.error('MongoDB connection error:', err);
-    process.exit(1);
+    logger.error('MongoDB connection error:', err.message);
+    logger.warn('Server will continue running without a database connection. Set MONGODB_URI to enable full features.');
   }
 };
 

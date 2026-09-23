@@ -72,10 +72,21 @@ app.use((err, req, res, next) => {
   });
 });
 
+const missing = [];
+if (!config.mongodb.uri) missing.push('MONGODB_URI');
+if (!config.jwt.secret) missing.push('JWT_SECRET');
+if (missing.length) {
+  logger.warn(`Missing environment variables: ${missing.join(', ')}`);
+  console.warn(`⚠️  Missing env vars: ${missing.join(', ')} — add them in Render Environment Variables.`);
+} else {
+  logger.info('All required environment variables are set');
+}
+
 const HOST = config.nodeEnv === 'production' ? '0.0.0.0' : 'localhost';
 server.listen(config.port, HOST, () => {
   logger.info(`Server running on ${HOST}:${config.port} in ${config.nodeEnv} mode`);
   console.log(`🚀 Server running on http://${HOST}:${config.port}`);
+  console.log(`🌐 Health check: http://${HOST}:${config.port}/health`);
 });
 
 process.on('SIGTERM', () => {
@@ -94,9 +105,6 @@ process.on('unhandledRejection', (reason, promise) => {
 process.on('uncaughtException', (error) => {
   logger.error('Uncaught Exception:', error);
   console.error('Uncaught Exception:', error);
-  setTimeout(() => {
-    process.exit(1);
-  }, 1000);
 });
 
 process.on('warning', (warning) => {
