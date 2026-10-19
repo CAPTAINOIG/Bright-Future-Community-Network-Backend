@@ -33,6 +33,11 @@ module.exports = {
     password: process.env.EMAIL_PASSWORD,
   },
 
+  adminLogin: {
+    email: process.env.ADMIN_EMAIL,
+    password: process.env.ADMIN_PASSWORD
+  },
+
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID,
   },
@@ -50,4 +55,5 @@ module.exports = {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
     max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
   },
+
 };

@@ -9,11 +9,23 @@ const connectDB = require('./connection/mongoose.connection');
 const logger = require('./utils/logger');
 
 const memberRouter = require('./routes/member.route');
+const adminRouter = require('./routes/admin.route');
+const dashboardRouter = require('./routes/dashboard.route');
+const volunteerRouter = require('./routes/volunteer.route');
+const projectRouter = require('./routes/project.route');
+const eventRouter = require('./routes/event.route');
+const newsRouter = require('./routes/news.route');
+const createAdmin = require('./scripts/seedAdmin');
 
 const app = express();
 const server = http.createServer(app);
 
-connectDB();
+connectDB()
+  .then((connected) => {
+    if (connected) return createAdmin();
+    return null;
+  })
+  .catch((err) => logger.error('Startup bootstrap failed:', err));
 
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
@@ -59,6 +71,12 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api', memberRouter);
+app.use('/api', volunteerRouter);
+app.use('/api', projectRouter);
+app.use('/api', eventRouter);
+app.use('/api', newsRouter);
+app.use('/api/auth/', adminRouter);
+app.use('/api/dashboard', dashboardRouter);
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });
@@ -66,9 +84,35 @@ app.use((req, res) => {
 
 app.use((err, req, res, next) => {
   logger.error('Error:', err);
-  res.status(err.status || 500).json({
+
+  let status = err.status || 500;
+  let message = err.message || 'Internal server error';
+  let errors = undefined;
+
+  if (err.name === 'ValidationError') {
+    status = 400;
+    errors = {};
+    Object.keys(err.errors).forEach((field) => {
+      errors[field] = err.errors[field].message;
+    });
+    message = 'Validation failed';
+  }
+
+  if (err.name === 'CastError') {
+    status = 400;
+    message = `Invalid ${err.path}: ${err.value}`;
+  }
+
+  if (err.code === 11000) {
+    status = 409;
+    const field = Object.keys(err.keyValue || {})[0] || 'field';
+    message = `Duplicate ${field} value. Please use another value.`;
+  }
+
+  res.status(status).json({
     success: false,
-    message: err.message || 'Internal server error',
+    message,
+    ...(errors ? { errors } : {}),
   });
 });
 

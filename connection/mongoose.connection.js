@@ -6,7 +6,7 @@ const connectDB = async () => {
   if (!config.mongodb.uri) {
     logger.error('MONGODB_URI environment variable is not set. MongoDB connection skipped.');
     logger.warn('Set MONGODB_URI in your Render dashboard Environment Variables.');
-    return;
+    return false;
   }
 
   try {
@@ -34,9 +34,11 @@ const connectDB = async () => {
       process.exit(0);
     });
 
+    return true;
   } catch (err) {
     logger.error('MongoDB connection error:', err.message);
     logger.warn('Server will continue running without a database connection. Set MONGODB_URI to enable full features.');
+    return false;
   }
 };
 

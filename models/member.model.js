@@ -22,21 +22,29 @@ const memberSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
-  skills: {
-    type: String,
+  interests: {
+    type: [String],
     required: true,
-    trim: true,
+    default: undefined,
+    validate: {
+      validator: (v) => Array.isArray(v) && v.length > 0,
+      message: 'At least one interests is required',
+    },
   },
   reason: {
     type: String,
     required: true,
     trim: true,
   },
-  interests: {
+  skill: {
     type: String,
     required: true,
-    trim: true,
+    default: undefined,
   },
+   isActive: {
+      type: Boolean,
+      default: true,
+    },
   email: {
     type: String,
     required: true,
@@ -44,19 +52,14 @@ const memberSchema = new mongoose.Schema({
     trim: true,
     lowercase: true,
   },
-  password: {
-    type: String,
-    required: true,
-  },
-});
-
-memberSchema.methods.validatePassword = function(password) {
-  return bcrypt.compare(password, this.password);
-};
+},
+{
+  timestamps: true,
+},
+);
 
 memberSchema.methods.toJSON = function() {
   const obj = this.toObject();
-  delete obj.password;
   delete obj.__v;
   return obj;
 };

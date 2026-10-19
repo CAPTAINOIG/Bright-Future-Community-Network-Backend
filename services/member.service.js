@@ -1,4 +1,5 @@
 const memberModel = require("../models/member.model");
+const activityModel = require("../models/activity.model");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const config = require("../config");
@@ -17,23 +18,54 @@ class MemberService {
     );
   }
 
-  async registerMember(userData) {
-    const { fullName, phone, location, community, skills, reason, interests, email, password } = userData;
-    const existingUser = await memberModel.findOne({ email });
-    if (existingUser) {
-      throw new Error("User already exists");
+  toArray(value) {
+    if (value == null) return [];
+    if (Array.isArray(value)) return value.filter((v) => typeof v === 'string' && v.trim().length > 0);
+    if (typeof value === 'string') {
+      return value
+        .split(/[,;\n|]+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
     }
-    const hashedPassword = await bcrypt.hash(password, 10);
+    return [];
+  }
+
+  async registerMember(userData) {
+    const { fullName, phone, location, community, reason, email, skill, interests, isActive } = userData;
+    const memberInterests = this.toArray(interests);
+    if (!email) {
+      const err = new Error('Email is required');
+      err.status = 400;
+      throw err;
+    }
+    if (memberInterests.length === 0) {
+      const err = new Error('At least one interest is required');
+      err.status = 400;
+      throw err;
+    }
+    const existingUser = await memberModel.findOne({ email: typeof email === 'string' ? email.toLowerCase() : email });
+    if (existingUser) {
+      const err = new Error('A member with this email already exists');
+      err.status = 409;
+      err.code = 'DUPLICATE_EMAIL';
+      throw err;
+    }
     const user = await memberModel.create({
       fullName,
       phone,
       location,
       community,
-      skills,
+      interests: memberInterests,
       reason,
-      interests,
+      skill,
       email,
-      password: hashedPassword,
+      isActive: true,
+    });
+    await activityModel.create({
+      type: 'member_registered',
+      content: `New member registered: ${fullName}`,
+      performedBy: fullName,
+      relatedId: user._id,
     });
     setImmediate(async () => {
       try {
@@ -82,7 +114,9 @@ class MemberService {
   async getMemberById(id) {
     const member = await memberModel.findById(id);
     if (!member) {
-      throw new Error('Member not found');
+      const err = new Error('Member not found');
+      err.status = 404;
+      throw err;
     }
     return member.toJSON();
   }
@@ -90,32 +124,43 @@ class MemberService {
   async updateMember(id, updateData) {
     const member = await memberModel.findById(id);
     if (!member) {
-      throw new Error('Member not found');
+      const err = new Error('Member not found');
+      err.status = 404;
+      throw err;
     }
 
-    const { fullName, phone, location, community, skills, reason, interests, email } = updateData;
+    const {...rest } = updateData;
 
-    if (email && email.toLowerCase() !== member.email) {
-      const existing = await memberModel.findOne({ email: email.toLowerCase() });
+    if (rest.email && String(rest.email).toLowerCase() !== member.email) {
+      const existing = await memberModel.findOne({ email: String(rest.email).toLowerCase() });
       if (existing) {
-        throw new Error('Email already in use');
+        const err = new Error('Email already in use');
+        err.status = 409;
+        throw err;
       }
-      member.email = email.toLowerCase();
+      rest.email = String(rest.email).toLowerCase();
     }
 
-    // if (password) {
-    //   rest.password = await bcrypt.hash(password, 10);
-    // }
+    if (rest.interests !== undefined) {
+      rest.interests = this.toArray(rest.interests);
+      if (rest.interests.length === 0) {
+        const err = new Error('At least one interest is required');
+        err.status = 400;
+        throw err;
+      }
+    }
 
-    // Object.assign(member, rest);
-    // await member.save();
-    // return member.toJSON();
+    Object.assign(member, rest);
+    await member.save();
+    return member.toJSON();
   }
 
   async deleteMember(id) {
     const member = await memberModel.findByIdAndDelete(id);
     if (!member) {
-      throw new Error('Member not found');
+      const err = new Error('Member not found');
+      err.status = 404;
+      throw err;
     }
     return { message: 'Member deleted successfully', id: member._id };
   }
