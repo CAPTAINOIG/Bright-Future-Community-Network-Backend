@@ -157,7 +157,8 @@ newsSchema.index({ title: 'text', summary: 'text', content: 'text' });
 /**
  * Generate a unique slug before saving
  */
-newsSchema.pre('save', async function (next) {
+// Mongoose 9 no longer passes `next` to middleware — async hooks just return
+newsSchema.pre('save', async function () {
   if (this.isModified('title') || this.isNew) {
     if (!this.slug) {
       let baseSlug = slugify(this.title, {
@@ -181,7 +182,6 @@ newsSchema.pre('save', async function (next) {
       this.slug = `${baseSlug}-${suffix}`;
     }
   }
-  next();
 });
 
 newsSchema.methods.toJSON = function () {

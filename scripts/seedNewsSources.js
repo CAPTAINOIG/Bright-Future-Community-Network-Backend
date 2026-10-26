@@ -27,7 +27,7 @@ const DEFAULT_SOURCES = [
     topicFilters: ['nigeria', 'oyo', 'ogbomoso'],
   },
   {
-    name: 'The Punch',
+    name: 'The Punch Nigeria',
     feedUrl: 'https://punchng.com/feed',
     sourceType: 'rss',
     defaultCategory: 'general',
@@ -35,26 +35,6 @@ const DEFAULT_SOURCES = [
     trusted: false,
     allowedHost: 'punchng.com',
     topicFilters: ['nigeria', 'oyo'],
-  },
-  {
-    name: 'Vanguard Nigeria',
-    feedUrl: 'https://www.vanguardngr.com/feed',
-    sourceType: 'rss',
-    defaultCategory: 'general',
-    enabled: true,
-    trusted: false,
-    allowedHost: 'www.vanguardngr.com',
-    topicFilters: ['nigeria', 'oyo'],
-  },
-  {
-    name: 'The Guardian Nigeria',
-    feedUrl: 'https://guardian.ng/feed',
-    sourceType: 'rss',
-    defaultCategory: 'general',
-    enabled: true,
-    trusted: false,
-    allowedHost: 'guardian.ng',
-    topicFilters: ['nigeria'],
   },
   {
     name: 'Daily Post Nigeria',
@@ -67,15 +47,24 @@ const DEFAULT_SOURCES = [
     topicFilters: ['nigeria', 'oyo', 'ogbomoso'],
   },
   {
-    name: 'Tribune Online',
-    feedUrl: 'https://tribuneonlineng.com/feed',
+    name: 'Naija.com News',
+    feedUrl: 'https://www.naija.com/news/feeds',
     sourceType: 'rss',
     defaultCategory: 'general',
     enabled: true,
     trusted: false,
-    allowedHost: 'tribuneonlineng.com',
-    locationFilter: 'oyo',
-    topicFilters: ['oyo', 'ibadan', 'ogbomoso', 'south-west'],
+    allowedHost: 'www.naija.com',
+    topicFilters: ['nigeria', 'oyo', 'ogbomoso'],
+  },
+  {
+    name: 'Linda Ikeji Blog',
+    feedUrl: 'https://lindaikejisblog.com/feed',
+    sourceType: 'rss',
+    defaultCategory: 'entertainment',
+    enabled: true,
+    trusted: false,
+    allowedHost: 'lindaikejisblog.com',
+    topicFilters: ['nigeria', 'entertainment'],
   },
 ];
 
@@ -87,8 +76,7 @@ const seedSources = async () => {
       process.exit(1);
     }
 
-    // Wait for indexes to build
-    await new Promise((r) => setTimeout(r, 2000));
+    console.log('📰 Starting news sources seeding...\n');
 
     let created = 0;
     let skipped = 0;
@@ -123,6 +111,8 @@ const seedSources = async () => {
     console.log('   environment. Some feeds may block requests from certain IP ranges or');
     console.log('   require additional headers. Check logs after the first fetch cycle.');
 
+    // Close DB connection and exit immediately
+    await new Promise(resolve => setTimeout(resolve, 500));
     process.exit(0);
   } catch (error) {
     logger.error('Failed to seed news sources:', error);
@@ -130,5 +120,11 @@ const seedSources = async () => {
     process.exit(1);
   }
 };
+
+// Set a hard timeout to force exit if something hangs
+setTimeout(() => {
+  console.error('⚠️ Seeding timeout - forcing exit');
+  process.exit(1);
+}, 20000);
 
 seedSources();

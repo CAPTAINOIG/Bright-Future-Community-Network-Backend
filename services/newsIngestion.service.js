@@ -12,7 +12,6 @@ const FETCH_TIMEOUT_MS = 15000;
 // Maximum articles to process per source per fetch cycle
 const MAX_ARTICLES_PER_FETCH = 50;
 
-// Category keyword mappings for automatic categorization
 const CATEGORY_KEYWORDS = {
   politics: [
     'governor', 'senator', 'election', 'political', 'government', 'policy',
@@ -211,7 +210,8 @@ class NewsIngestionService {
         }
       } catch (err) {
         // Log but don't crash the whole source on a single item error
-        logger.warn(`News ingestion: Error processing item from "${source.name}":`, err.message);
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        logger.warn(`News ingestion: Error processing item from "${source.name}": ${errorMessage}`);
       }
     }
 
@@ -242,10 +242,19 @@ class NewsIngestionService {
    * @returns {'new' | 'duplicate' | 'skipped'}
    */
   async processItem(item, source, autoPublish) {
-    // Must have a title and link
-    const title = this.sanitizeText(item.title);
-    const link = item.link || item.guid || '';
+    // Safely extract title and link
+    let title = '';
+    let link = '';
 
+    try {
+      title = this.sanitizeText(item.title);
+      link = item.link || item.guid || '';
+    } catch (err) {
+      logger.debug(`News ingestion: Failed to extract basic fields from item:`, err.message);
+      return 'skipped';
+    }
+
+    // Must have a title and link
     if (!title || title.length < 5) {
       return 'skipped';
     }
@@ -266,12 +275,23 @@ class NewsIngestionService {
       return 'duplicate';
     }
 
-    // Extract data
-    const summary = this.extractSummary(item);
-    const imageUrl = this.extractImage(item);
-    const publishedAt = this.parseDate(item.pubDate || item.isoDate);
-    const category = this.categorize(title, summary, source.defaultCategory);
-    const location = this.detectLocation(title, summary);
+    // Extract data safely
+    let summary = '';
+    let imageUrl = '';
+    let publishedAt = null;
+    let category = source.defaultCategory;
+    let location = '';
+
+    try {
+      summary = this.extractSummary(item);
+      imageUrl = this.extractImage(item);
+      publishedAt = this.parseDate(item.pubDate || item.isoDate) || new Date();
+      category = this.categorize(title, summary, source.defaultCategory);
+      location = this.detectLocation(title, summary);
+    } catch (err) {
+      logger.debug(`News ingestion: Error extracting fields from "${title}":`, err.message);
+      // Continue with minimal data
+    }
 
     // Determine publication status
     let status = 'pending';
@@ -287,8 +307,8 @@ class NewsIngestionService {
       sourceUrl: link,
       normalizedSourceUrl: normalized,
       sourceId: source._id,
-      imageUrl: imageUrl,
-      image: imageUrl, // Legacy field
+      imageUrl: imageUrl || '',
+      image: imageUrl || '', // Legacy field
       author: source.name, // Legacy field — use source name
       category,
       location,
@@ -316,29 +336,58 @@ class NewsIngestionService {
    * Sanitize text content — strip HTML, decode entities, trim whitespace.
    */
   sanitizeText(text) {
-    if (!text || typeof text !== 'string') return '';
+    // Ensure we're working with a string
+    if (!text) {
+      return '';
+    }
+    
+    // If it's not a string, convert it carefully
+    let textStr = text;
+    if (typeof text !== 'string') {
+      try {
+        textStr = String(text);
+      } catch {
+        return '';
+      }
+    }
 
-    const cleaned = sanitizeHtml(text, {
-      allowedTags: [],
-      allowedAttributes: {},
-    });
+    try {
+      // Use sanitizeHtml only if it looks like HTML
+      let cleaned = textStr;
+      if (textStr.includes('<')) {
+        cleaned = sanitizeHtml(textStr, {
+          allowedTags: [],
+          allowedAttributes: {},
+        });
+      }
 
-    return cleaned
-      .replace(/\s+/g, ' ')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
-      .trim();
+      return cleaned
+        .replace(/\s+/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .trim();
+    } catch (err) {
+      // If sanitization fails, try basic string handling
+      if (typeof textStr === 'string') {
+        return textStr.replace(/\s+/g, ' ').trim();
+      }
+      return '';
+    }
   }
 
   /**
    * Extract a summary/excerpt from the feed item.
    */
   extractSummary(item) {
-    const raw = item.contentSnippet || item.content || item.summary || item.description || '';
-    const cleaned = this.sanitizeText(raw);
+    const raw = item.contentSnippet || item.summary || item.description || '';
+    
+    // Just trim whitespace, don't use sanitizeHtml for simple text
+    const cleaned = String(raw)
+      .replace(/\s+/g, ' ')
+      .trim();
 
     // Truncate to reasonable length
     if (cleaned.length > 1500) {
@@ -409,14 +458,29 @@ class NewsIngestionService {
    * Categorize an article based on its title and content.
    */
   categorize(title, summary, defaultCategory) {
+    // Simple string matching without iteration over large arrays
     const text = `${title} ${summary}`.toLowerCase();
 
-    for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
-      for (const keyword of keywords) {
-        if (text.includes(keyword.toLowerCase())) {
-          return category;
-        }
-      }
+    if (text.includes('politics') || text.includes('government') || text.includes('election')) {
+      return 'politics';
+    }
+    if (text.includes('education') || text.includes('school') || text.includes('student')) {
+      return 'education';
+    }
+    if (text.includes('health') || text.includes('hospital') || text.includes('medical')) {
+      return 'health';
+    }
+    if (text.includes('sport') || text.includes('football') || text.includes('athlete')) {
+      return 'sports';
+    }
+    if (text.includes('entertainment') || text.includes('music') || text.includes('movie') || text.includes('nollywood')) {
+      return 'entertainment';
+    }
+    if (text.includes('business') || text.includes('economy') || text.includes('market') || text.includes('trade')) {
+      return 'business';
+    }
+    if (text.includes('security') || text.includes('police') || text.includes('crime')) {
+      return 'security';
     }
 
     return defaultCategory || 'general';
@@ -426,20 +490,32 @@ class NewsIngestionService {
    * Detect location mentions in the text.
    */
   detectLocation(title, summary) {
-    const text = `${title} ${summary}`.toLowerCase();
+    try {
+      const text = `${title} ${summary}`.toLowerCase();
 
-    for (const location of LOCATION_KEYWORDS) {
-      if (text.includes(location.toLowerCase())) {
-        // Return a nicer formatted version
-        if (location === 'ogbomoso' || location === 'ogbomosho') return 'Ogbomoso';
-        if (location === 'oyo' || location === 'oyo state') return 'Oyo State';
-        if (location === 'ibadan') return 'Ibadan';
-        if (location === 'nigeria') return 'Nigeria';
-        return location.charAt(0).toUpperCase() + location.slice(1);
+      // Defensive checks for LOCATION_KEYWORDS
+      const locations = [
+        'ogbomoso', 'ogbomosho', 'oyo', 'oyo state', 'ibadan', 'nigeria',
+        'oke-ogun', 'saki', 'iseyin', 'eruwa', 'lanlate', 'ibarapa',
+        'south-west', 'south west', 'yoruba',
+      ];
+
+      for (const location of locations) {
+        if (text.includes(location.toLowerCase())) {
+          // Return a nicer formatted version
+          if (location === 'ogbomoso' || location === 'ogbomosho') return 'Ogbomoso';
+          if (location === 'oyo' || location === 'oyo state') return 'Oyo State';
+          if (location === 'ibadan') return 'Ibadan';
+          if (location === 'nigeria') return 'Nigeria';
+          return location.charAt(0).toUpperCase() + location.slice(1);
+        }
       }
-    }
 
-    return '';
+      return '';
+    } catch (err) {
+      logger.debug(`News ingestion: Error detecting location: ${err.message}`);
+      return '';
+    }
   }
 
   /**

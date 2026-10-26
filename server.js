@@ -133,6 +133,18 @@ if (missing.length) {
 }
 
 const HOST = config.nodeEnv === 'production' ? '0.0.0.0' : 'localhost';
+
+// Exit instead of lingering when the port is taken — a non-listening duplicate
+// would otherwise keep running the news scheduler in the background
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    logger.error(`Port ${config.port} is already in use — is another backend instance running?`);
+    console.error(`❌ Port ${config.port} is already in use. Stop the other backend instance and retry.`);
+    process.exit(1);
+  }
+  throw err;
+});
+
 server.listen(config.port, HOST, () => {
   logger.info(`Server running on ${HOST}:${config.port} in ${config.nodeEnv} mode`);
   console.log(`🚀 Server running on http://${HOST}:${config.port}`);

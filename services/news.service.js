@@ -7,11 +7,12 @@ class NewsService {
   //  * Get published news articles for public consumption.
   //  * Supports pagination, search, category filter, featured filter, and date sorting.
   async getPublishedNews(query = {}) {
-    const { page = 1, limit = 10, search = '', status = '', category = '', featured, language, sort = 'latest' } = query;
+    const { page = 1, limit = 10, search = '', category = '', featured, language, sort = 'latest' } = query;
     const pageNum = Math.max(1, parseInt(page) || 1);
     const limitNum = Math.min(50, Math.max(1, parseInt(limit) || 10));
     const skip = (pageNum - 1) * limitNum;
-    const filter = { status: status };
+    // Public endpoint only ever exposes published articles
+    const filter = { status: 'published' };
     if (search) {
       filter.$or = [
         { title: { $regex: search, $options: 'i' } },
