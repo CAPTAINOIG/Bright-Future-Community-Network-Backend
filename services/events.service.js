@@ -10,7 +10,7 @@ class EventService {
       description,
       date,
       location,
-      status,
+      status: typeof status === 'string' && status.trim() === '' ? undefined : status,
       image,
     });
 
@@ -74,7 +74,13 @@ class EventService {
       throw err;
     }
 
-    Object.assign(event, updateData);
+    const { status, ...rest } = updateData;
+
+    if (typeof status === 'string' && status.trim() !== '') {
+      event.status = status;
+    }
+
+    Object.assign(event, rest);
     await event.save();
 
     await activityModel.create({

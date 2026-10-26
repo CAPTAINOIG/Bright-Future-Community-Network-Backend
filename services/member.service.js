@@ -82,34 +82,61 @@ class MemberService {
   }
 
   async getAllMembers(query = {}) {
-    const { page = 1, limit = 10, search = '' } = query;
-    const skip = (page - 1) * limit;
+  const {
+    page = 1,
+    limit = 10,
+    search = '',
+    isActive,
+    interests,
+    community,
+  } = query;
 
-    const filter = {};
-    if (search) {
-      filter.$or = [
-        { fullName: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-        { community: { $regex: search, $options: 'i' } },
-        { location: { $regex: search, $options: 'i' } },
-      ];
-    }
+  const parsedPage = Math.max(1, Number(page) || 1);
+  const parsedLimit = Math.max(1, Number(limit) || 10);
+  const skip = (parsedPage - 1) * parsedLimit;
 
-    const [members, total] = await Promise.all([
-      memberModel.find(filter).skip(skip).limit(Number(limit)).sort({ createdAt: -1 }),
-      memberModel.countDocuments(filter),
-    ]);
+  const filter = {};
 
-    return {
-      members: members.map((m) => m.toJSON()),
-      pagination: {
-        page: Number(page),
-        limit: Number(limit),
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+  if (search.trim()) {
+    filter.$or = [
+      { fullName: { $regex: search.trim(), $options: 'i' } },
+      { email: { $regex: search.trim(), $options: 'i' } },
+      { community: { $regex: search.trim(), $options: 'i' } },
+      { location: { $regex: search.trim(), $options: 'i' } },
+    ];
   }
+  // Convert query string to a real Boolean
+  if (isActive === 'true' || isActive === true) {
+    filter.isActive = true;
+  } else if (isActive === 'false' || isActive === false) {
+    filter.isActive = false;
+  }
+  if (community) {
+  filter.community = community;
+}
+if (interests) {
+  filter.interests = { $in: this.toArray(interests) };
+}
+
+  const [members, total] = await Promise.all([
+    memberModel.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parsedLimit),
+
+    memberModel.countDocuments(filter),
+  ]);
+
+  return {
+    members,
+    pagination: {
+      page: parsedPage,
+      limit: parsedLimit,
+      total,
+      totalPages: Math.ceil(total / parsedLimit),
+    },
+  };
+}
 
   async getMemberById(id) {
     const member = await memberModel.findById(id);

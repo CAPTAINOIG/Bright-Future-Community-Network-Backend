@@ -41,10 +41,10 @@ const memberSchema = new mongoose.Schema({
     required: true,
     default: undefined,
   },
-   isActive: {
-      type: Boolean,
-      default: true,
-    },
+  isActive: {
+    type: Boolean,
+    default: true,
+  },
   email: {
     type: String,
     required: true,
@@ -53,12 +53,12 @@ const memberSchema = new mongoose.Schema({
     lowercase: true,
   },
 },
-{
-  timestamps: true,
-},
+  {
+    timestamps: true,
+  },
 );
 
-memberSchema.methods.toJSON = function() {
+memberSchema.methods.toJSON = function () {
   const obj = this.toObject();
   delete obj.__v;
   return obj;

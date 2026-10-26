@@ -15,7 +15,7 @@ class VolunteerService {
   }
 
   async createVolunteer(volunteerData) {
-    const { fullName, email, phone, community, availability, status, isActive, experience } = volunteerData;
+    const { fullName, email, phone, community, availability, status, isActive, reason, experience } = volunteerData;
     const volunteerSkills = this.toArray(volunteerData.skills);
 
     if (!email) {
@@ -47,6 +47,7 @@ class VolunteerService {
       availability,
       experience,
       status,
+      reason,
       isActive: true,
     });
 
@@ -61,7 +62,7 @@ class VolunteerService {
   }
 
   async getAllVolunteers(query = {}) {
-    const { page = 1, limit = 10, search = '', status } = query;
+    const { page = 1, limit = 10, search = '', status, community, skills } = query;
     const skip = (page - 1) * limit;
 
     const filter = {};
@@ -75,6 +76,12 @@ class VolunteerService {
     }
     if (status) {
       filter.status = status;
+    }
+    if (community) {
+    filter.community = community;
+    }
+    if (skills) {
+    filter.skills = {$in: this.toArray(skills)};
     }
 
     const [volunteers, total] = await Promise.all([

@@ -23,6 +23,11 @@ const volunteerSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
+  reason: {
+    type: String,
+    required: true,
+    trim: true,
+  },
   skills: {
     type: [String],
     required: true,

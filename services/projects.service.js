@@ -3,16 +3,19 @@ const activityModel = require("../models/activity.model");
 
 class ProjectService {
   async createProject(projectData) {
-    const { title, description, status, progress, startDate, endDate, image } = projectData;
+    const { title, description, status, progress, startDate, endDate, category, projectLead, budget, targetBeneficiaries } = projectData;
 
     const project = await projectModel.create({
       title,
       description,
-      status,
+      status: typeof status === 'string' && status.trim() === '' ? undefined : status,
       progress,
       startDate,
       endDate,
-      image,
+      category,
+      projectLead,
+      budget,
+      targetBeneficiaries,
     });
 
     await activityModel.create({
@@ -26,7 +29,7 @@ class ProjectService {
   }
 
   async getAllProjects(query = {}) {
-    const { page = 1, limit = 10, search = '', status } = query;
+    const { page = 1, limit = 10, search = '', status, category, projectLead } = query;
     const skip = (page - 1) * limit;
 
     const filter = {};
@@ -38,6 +41,12 @@ class ProjectService {
     }
     if (status) {
       filter.status = status;
+    }
+    if (category) {
+      filter.category = { $in: category };
+    }
+    if (projectLead) {
+      filter.projectLead = projectLead;
     }
 
     const [projects, total] = await Promise.all([
@@ -74,7 +83,13 @@ class ProjectService {
       throw err;
     }
 
-    Object.assign(project, updateData);
+    const { status, ...rest } = updateData;
+
+    if (typeof status === 'string' && status.trim() !== '') {
+      project.status = status;
+    }
+
+    Object.assign(project, rest);
     await project.save();
 
     await activityModel.create({

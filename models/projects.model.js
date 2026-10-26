@@ -13,8 +13,27 @@ const projectSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Planned', 'Ongoing', 'Completed', 'On Hold'],
-    default: 'Planned',
+    enum: ['Planning', 'Fundraising', 'Active', 'Cancelled', 'Ongoing', 'Completed', 'On Hold'],
+    default: 'Planning',
+  },
+  budget: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
+  category: {
+    type: String,
+    enum: ['Education', 'HealthCare', 'Welfare', 'Community Development', 'Youth Empowerment', 'Women Empowerment', 'Environment', 'Infrastructure', 'Food', 'Shelter', 'Other'],
+    default: 'Other',
+  },
+  targetBeneficiaries: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
+  projectLead: {
+    type: String,
+    trim: true,
   },
   progress: {
     type: Number,
@@ -27,10 +46,6 @@ const projectSchema = new mongoose.Schema({
   },
   endDate: {
     type: Date,
-  },
-  image: {
-    type: String,
-    trim: true,
   },
 },
 {
