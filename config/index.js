@@ -51,6 +51,12 @@ module.exports = {
     credentials: true,
   },
 
+  news: {
+    fetchIntervalMinutes: parseInt(process.env.NEWS_FETCH_INTERVAL_MINUTES) || 30,
+    autoPublish: process.env.NEWS_AUTO_PUBLISH === 'true',
+    timezone: process.env.NEWS_DEFAULT_TIMEZONE || 'Africa/Lagos',
+  },
+
   rateLimit: {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
     max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,

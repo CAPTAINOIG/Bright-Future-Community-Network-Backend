@@ -34,3 +34,9 @@ services:
         sync: false
       - key: EMAIL_PASSWORD
         sync: false
+      - key: NEWS_FETCH_INTERVAL_MINUTES
+        value: "30"
+      - key: NEWS_AUTO_PUBLISH
+        value: "false"
+      - key: NEWS_DEFAULT_TIMEZONE
+        value: "Africa/Lagos"

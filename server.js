@@ -16,13 +16,19 @@ const projectRouter = require('./routes/project.route');
 const eventRouter = require('./routes/event.route');
 const newsRouter = require('./routes/news.route');
 const createAdmin = require('./scripts/seedAdmin');
+const newsSchedulerService = require('./services/newsScheduler.service');
 
 const app = express();
 const server = http.createServer(app);
 
 connectDB()
   .then((connected) => {
-    if (connected) return createAdmin();
+    if (connected) {
+      return createAdmin().then(() => {
+        // Start the automated news collection scheduler
+        newsSchedulerService.init();
+      });
+    }
     return null;
   })
   .catch((err) => logger.error('Startup bootstrap failed:', err));
@@ -33,7 +39,7 @@ app.use(helmet({
 
 app.use(cors({
   origin: config.cors.origin,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   credentials: config.cors.credentials,
 }));
 
@@ -135,6 +141,7 @@ server.listen(config.port, HOST, () => {
 
 process.on('SIGTERM', () => {
   logger.info('SIGTERM signal received: closing HTTP server');
+  newsSchedulerService.stop();
   server.close(() => {
     logger.info('HTTP server closed');
     process.exit(0);

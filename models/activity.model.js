@@ -4,7 +4,7 @@ const activitySchema = new mongoose.Schema({
   type: {
     type: String,
     required: true,
-    enum: ['member_registered', 'volunteer_applied', 'project_updated', 'event_opened', 'news_published'],
+    enum: ['member_registered', 'volunteer_applied', 'project_updated', 'event_opened', 'news_published', 'news_collected', 'news_status_changed'],
   },
   content: {
     type: String,
