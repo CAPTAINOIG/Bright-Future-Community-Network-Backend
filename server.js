@@ -21,18 +21,6 @@ const newsSchedulerService = require('./services/newsScheduler.service');
 const app = express();
 const server = http.createServer(app);
 
-connectDB()
-  .then((connected) => {
-    if (connected) {
-      return createAdmin().then(() => {
-        // Start the automated news collection scheduler
-        newsSchedulerService.init();
-      });
-    }
-    return null;
-  })
-  .catch((err) => logger.error('Startup bootstrap failed:', err));
-
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
@@ -122,6 +110,7 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Check required environment variables
 const missing = [];
 if (!config.mongodb.uri) missing.push('MONGODB_URI');
 if (!config.jwt.secret) missing.push('JWT_SECRET');
@@ -134,8 +123,7 @@ if (missing.length) {
 
 const HOST = config.nodeEnv === 'production' ? '0.0.0.0' : 'localhost';
 
-// Exit instead of lingering when the port is taken — a non-listening duplicate
-// would otherwise keep running the news scheduler in the background
+// Handle port errors
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
     logger.error(`Port ${config.port} is already in use — is another backend instance running?`);
@@ -145,11 +133,40 @@ server.on('error', (err) => {
   throw err;
 });
 
-server.listen(config.port, HOST, () => {
-  logger.info(`Server running on ${HOST}:${config.port} in ${config.nodeEnv} mode`);
-  console.log(`🚀 Server running on http://${HOST}:${config.port}`);
-  console.log(`🌐 Health check: http://${HOST}:${config.port}/health`);
-});
+// Initialize server
+const startServer = async () => {
+  try {
+    // Connect to database first
+    const connected = await connectDB();
+
+    if (connected) {
+      try {
+        await createAdmin();
+      } catch (adminErr) {
+        logger.warn('Admin seeding failed (may already exist):', adminErr.message);
+      }
+
+      // Initialize news scheduler only if DB is connected
+      newsSchedulerService.init();
+    } else {
+      logger.warn('Server starting without database connection. Some features will be limited.');
+    }
+
+    // Start listening
+    server.listen(config.port, HOST, () => {
+      logger.info(`Server running on ${HOST}:${config.port} in ${config.nodeEnv} mode`);
+      console.log(`🚀 Server running on http://${HOST}:${config.port}`);
+      console.log(`🌐 Health check: http://${HOST}:${config.port}/health`);
+    });
+  } catch (err) {
+    logger.error('Failed to start server:', err.message);
+    console.error('❌ Server startup failed:', err.message);
+    process.exit(1);
+  }
+};
+
+// Start the server
+startServer();
 
 process.on('SIGTERM', () => {
   logger.info('SIGTERM signal received: closing HTTP server');
