@@ -24,7 +24,23 @@ class AdminService {
     }
 
     const normalizedEmail = typeof email === "string" ? email.toLowerCase().trim() : email;
-    const admin = await adminModel.findOne({ email: normalizedEmail });
+    
+    // Add timeout wrapper for database query
+    let admin;
+    try {
+      const query = adminModel.findOne({ email: normalizedEmail });
+      admin = await Promise.race([
+        query.exec(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Database query timeout')), 8000)
+        )
+      ]);
+    } catch (err) {
+      logger.error('Failed to fetch admin from database:', err.message);
+      const error = new Error('Database connection issue - please try again');
+      error.status = 503;
+      throw error;
+    }
 
     if (!admin) {
       const error = new Error("Invalid email or password");
@@ -42,7 +58,10 @@ class AdminService {
     try {
       validPassword = await bcrypt.compare(String(password), admin.password);
     } catch (err) {
-      logger.error("bcrypt compare failed for admin:", err);
+      logger.error("bcrypt compare failed for admin:", err.message);
+      const error = new Error("Authentication service error");
+      error.status = 500;
+      throw error;
     }
 
     if (!validPassword) {

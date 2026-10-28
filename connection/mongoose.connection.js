@@ -12,8 +12,11 @@ const connectDB = async () => {
   try {
     const options = {
       maxPoolSize: 10,
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 15000,
       socketTimeoutMS: 45000,
+      connectTimeoutMS: 15000,
+      bufferCommands: false,
+      maxIdleTimeMS: 45000,
     };
 
     await mongoose.connect(config.mongodb.uri, options);
@@ -21,11 +24,15 @@ const connectDB = async () => {
     logger.info('MongoDB connected successfully');
 
     mongoose.connection.on('error', (err) => {
-      logger.error('MongoDB connection error:', err);
+      logger.error('MongoDB connection error:', err.message);
     });
 
     mongoose.connection.on('disconnected', () => {
       logger.warn('MongoDB disconnected');
+    });
+
+    mongoose.connection.on('reconnected', () => {
+      logger.info('MongoDB reconnected');
     });
 
     process.on('SIGINT', async () => {
