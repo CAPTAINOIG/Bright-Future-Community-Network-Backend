@@ -38,7 +38,7 @@ const CATEGORY_KEYWORDS = {
   ],
   sports: [
     'sports', 'football', 'nff', 'npfl', 'atletico', 'basketball',
-    'athlete', 'tournament', 'championship', 'match', 'league',
+    'athlete', 'tournament', 'championship', 'match', 'league', 'wwe', 'chelsea',
   ],
   technology: [
     'technology', 'tech', 'digital', 'software', 'app', 'internet',
@@ -77,9 +77,7 @@ const LOCATION_KEYWORDS = [
   'south-west', 'south west', 'yoruba',
 ];
 
-/**
- * News ingestion service — fetches articles from configured RSS/Atom sources
- */
+//  * News ingestion service — fetches articles from configured RSS/Atom sources
 class NewsIngestionService {
   constructor() {
     this.parser = new RssParser({
@@ -94,19 +92,15 @@ class NewsIngestionService {
     this._isRunning = false;
   }
 
-  /**
-   * Fetch and ingest articles from all enabled sources.
-   * Returns a summary of the run.
-   */
+  //  * Fetch and ingest articles from all enabled sources.
+  //  * Returns a summary of the run.
   async fetchAllSources() {
     if (this._isRunning) {
       logger.warn('News ingestion: A fetch job is already running, skipping.');
       return { skipped: true, reason: 'Already running' };
     }
-
     this._isRunning = true;
     const startTime = Date.now();
-
     const summary = {
       totalSources: 0,
       successfulSources: 0,
@@ -116,19 +110,15 @@ class NewsIngestionService {
       errors: [],
       startedAt: new Date().toISOString(),
     };
-
     try {
       const sources = await newsSourceModel.find({ enabled: true });
       summary.totalSources = sources.length;
-
       if (sources.length === 0) {
         logger.info('News ingestion: No enabled sources configured.');
         summary.message = 'No enabled news sources configured. Add sources via the admin API.';
         return summary;
       }
-
       logger.info(`News ingestion: Starting fetch for ${sources.length} source(s).`);
-
       // Process each source independently
       for (const source of sources) {
         try {
@@ -168,11 +158,9 @@ class NewsIngestionService {
     }
   }
 
-  /**
-   * Fetch and process articles from a single source.
-   * @param {Object} source - NewsSource document
-   * @returns {{ newArticles: number, duplicates: number }}
-   */
+  //  * Fetch and process articles from a single source.
+  //  * @param {Object} source - NewsSource document
+  //  * @returns {{ newArticles: number, duplicates: number }}
   async fetchSource(source) {
     // Validate the feed URL before fetching
     const allowedHosts = source.allowedHost ? [source.allowedHost] : [];
@@ -197,14 +185,14 @@ class NewsIngestionService {
     const items = feed.items.slice(0, MAX_ARTICLES_PER_FETCH);
     let newArticles = 0;
     let duplicates = 0;
-
     const autoPublish = config.news?.autoPublish === true || config.news?.autoPublish === 'true';
-
     for (const item of items) {
       try {
         const result = await this.processItem(item, source, autoPublish);
         if (result === 'new') {
           newArticles++;
+          // logger.info(`Saved article "${this.sanitizeText(item.title)}" from "${source.name}"`);
+          // logger.info(`Saved article "${this.sanitizeText(item)}" from "${source}"`);
         } else if (result === 'duplicate') {
           duplicates++;
         }
@@ -234,13 +222,11 @@ class NewsIngestionService {
     return { newArticles, duplicates };
   }
 
-  /**
-   * Process a single RSS/Atom feed item into a news article.
-   * @param {Object} item - RSS feed item
-   * @param {Object} source - NewsSource document
-   * @param {boolean} autoPublish - Whether to auto-publish from trusted sources
-   * @returns {'new' | 'duplicate' | 'skipped'}
-   */
+  //  * Process a single RSS/Atom feed item into a news article.
+  //  * @param {Object} item - RSS feed item
+  //  * @param {Object} source - NewsSource document
+  //  * @param {boolean} autoPublish - Whether to auto-publish from trusted sources
+  //  * @returns {'new' | 'duplicate' | 'skipped'}
   async processItem(item, source, autoPublish) {
     // Safely extract title and link
     let title = '';
@@ -321,7 +307,7 @@ class NewsIngestionService {
     };
 
     try {
-      await newsModel.create(articleData);
+     const res = await newsModel.create(articleData);
       return 'new';
     } catch (err) {
       // Handle duplicate key errors gracefully
@@ -332,9 +318,7 @@ class NewsIngestionService {
     }
   }
 
-  /**
-   * Sanitize text content — strip HTML, decode entities, trim whitespace.
-   */
+  //  * Sanitize text content — strip HTML, decode entities, trim whitespace.
   sanitizeText(text) {
     // Ensure we're working with a string
     if (!text) {
@@ -378,28 +362,19 @@ class NewsIngestionService {
     }
   }
 
-  /**
-   * Extract a summary/excerpt from the feed item.
-   */
+  //  * Extract a summary/excerpt from the feed item.
   extractSummary(item) {
     const raw = item.contentSnippet || item.summary || item.description || '';
-    
     // Just trim whitespace, don't use sanitizeHtml for simple text
-    const cleaned = String(raw)
-      .replace(/\s+/g, ' ')
-      .trim();
-
+    const cleaned = String(raw).replace(/\s+/g, ' ').trim();
     // Truncate to reasonable length
     if (cleaned.length > 1500) {
       return cleaned.substring(0, 1497) + '...';
     }
-
     return cleaned;
   }
 
-  /**
-   * Extract an image URL from the feed item if available.
-   */
+  //  * Extract an image URL from the feed item if available.
   extractImage(item) {
     // Check enclosures (common RSS pattern)
     if (item.enclosure && item.enclosure.url && item.enclosure.type?.startsWith('image/')) {
@@ -426,9 +401,7 @@ class NewsIngestionService {
     return '';
   }
 
-  /**
-   * Parse a date string safely.
-   */
+  //  * Parse a date string safely.
   parseDate(dateStr) {
     if (!dateStr) return null;
 
@@ -454,9 +427,7 @@ class NewsIngestionService {
     }
   }
 
-  /**
-   * Categorize an article based on its title and content.
-   */
+  //  * Categorize an article based on its title and content.
   categorize(title, summary, defaultCategory) {
     // Simple string matching without iteration over large arrays
     const text = `${title} ${summary}`.toLowerCase();
@@ -482,17 +453,13 @@ class NewsIngestionService {
     if (text.includes('security') || text.includes('police') || text.includes('crime')) {
       return 'security';
     }
-
     return defaultCategory || 'general';
   }
 
-  /**
-   * Detect location mentions in the text.
-   */
+  //  Detect location mentions in the text.
   detectLocation(title, summary) {
     try {
       const text = `${title} ${summary}`.toLowerCase();
-
       // Defensive checks for LOCATION_KEYWORDS
       const locations = [
         'ogbomoso', 'ogbomosho', 'oyo', 'oyo state', 'ibadan', 'nigeria',
@@ -504,13 +471,12 @@ class NewsIngestionService {
         if (text.includes(location.toLowerCase())) {
           // Return a nicer formatted version
           if (location === 'ogbomoso' || location === 'ogbomosho') return 'Ogbomoso';
-          if (location === 'oyo' || location === 'oyo state') return 'Oyo State';
-          if (location === 'ibadan') return 'Ibadan';
-          if (location === 'nigeria') return 'Nigeria';
+          if (location === 'oyo' || location === 'oyo state' || location === 'Oyo State') {return 'Oyo State'};
+          if (location === 'ibadan' || location === 'Ibadan') return 'Ibadan';
+          if (location === 'nigeria' || location === 'Nigeria') return 'Nigeria';
           return location.charAt(0).toUpperCase() + location.slice(1);
         }
       }
-
       return '';
     } catch (err) {
       logger.debug(`News ingestion: Error detecting location: ${err.message}`);
@@ -518,9 +484,7 @@ class NewsIngestionService {
     }
   }
 
-  /**
-   * Check if the service is currently running a fetch job
-   */
+  //  * Check if the service is currently running a fetch job
   get isRunning() {
     return this._isRunning;
   }

@@ -179,9 +179,7 @@ class NewsService {
     return article;
   }
 
-  /**
-   * Admin: Get news statistics.
-   */
+  //  * Admin: Get news statistics.
   async getNewsStats() {
     const [pending, published, rejected, archived, total, featured] = await Promise.all([
       newsModel.countDocuments({ status: 'pending' }),
@@ -204,17 +202,13 @@ class NewsService {
     };
   }
 
-  /**
-   * List all configured news sources.
-   */
+  //  * List all configured news sources.
   async getSources() {
     const sources = await newsSourceModel.find().sort({ createdAt: -1 }).lean();
     return sources;
   }
 
-  /**
-   * Get a single source by ID.
-   */
+  //  * Get a single source by ID.
   async getSourceById(id) {
     const source = await newsSourceModel.findById(id).lean();
     if (!source) {
@@ -225,9 +219,7 @@ class NewsService {
     return source;
   }
 
-  /**
-   * Create a new news source.
-   */
+  //  * Create a new news source.
   async createSource(data) {
     const { name, feedUrl, sourceType, defaultCategory, enabled, trusted, locationFilter, topicFilters, allowedHost } = data;
 
@@ -264,9 +256,7 @@ class NewsService {
     return source.toJSON();
   }
 
-  /**
-   * Update a news source.
-   */
+  //  * Update a news source.
   async updateSource(id, updateData) {
     const allowedFields = [
       'name', 'feedUrl', 'sourceType', 'defaultCategory',
@@ -306,9 +296,7 @@ class NewsService {
     return source;
   }
 
-  /**
-   * Delete a news source.
-   */
+  //  * Delete a news source.
   async deleteSource(id) {
     const source = await newsSourceModel.findByIdAndDelete(id);
     if (!source) {
