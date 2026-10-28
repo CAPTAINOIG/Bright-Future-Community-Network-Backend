@@ -39,7 +39,6 @@ const newsSchema = new mongoose.Schema({
     type: String,
     trim: true,
     default: '',
-    index: true,
   },
   sourceId: {
     type: mongoose.Schema.Types.ObjectId,
