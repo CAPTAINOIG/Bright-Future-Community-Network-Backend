@@ -133,6 +133,25 @@ server.on('error', (err) => {
   throw err;
 });
 
+// Ping our own public URL so Render's free plan doesn't spin the service down
+let keepAliveTimer = null;
+const startKeepAlive = () => {
+  const { url, intervalMinutes } = config.keepAlive;
+  if (!url) return;
+
+  const healthUrl = `${url.replace(/\/+$/, '')}/health`;
+  keepAliveTimer = setInterval(async () => {
+    try {
+      const res = await fetch(healthUrl);
+      logger.debug(`Keep-alive ping: ${res.status}`);
+    } catch (err) {
+      logger.warn(`Keep-alive ping failed: ${err.message}`);
+    }
+  }, intervalMinutes * 60 * 1000);
+
+  logger.info(`Keep-alive: pinging ${healthUrl} every ${intervalMinutes} minutes`);
+};
+
 // Initialize server
 const startServer = async () => {
   try {
@@ -157,6 +176,7 @@ const startServer = async () => {
       logger.info(`Server running on ${HOST}:${config.port} in ${config.nodeEnv} mode`);
       console.log(`🚀 Server running on http://${HOST}:${config.port}`);
       console.log(`🌐 Health check: http://${HOST}:${config.port}/health`);
+      startKeepAlive();
     });
   } catch (err) {
     logger.error('Failed to start server:', err.message);
@@ -171,6 +191,7 @@ startServer();
 process.on('SIGTERM', () => {
   logger.info('SIGTERM signal received: closing HTTP server');
   newsSchedulerService.stop();
+  clearInterval(keepAliveTimer);
   server.close(() => {
     logger.info('HTTP server closed');
     process.exit(0);

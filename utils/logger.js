@@ -16,14 +16,11 @@ const logger = winston.createLogger({
   ],
 });
 
-// Console logging in development
-if (config.nodeEnv !== 'production') {
-  logger.add(new winston.transports.Console({
-    format: winston.format.combine(
-      winston.format.colorize(),
-      winston.format.simple()
-    ),
-  }));
-}
+// Console logging everywhere — Render only shows stdout/stderr, not log files
+logger.add(new winston.transports.Console({
+  format: config.nodeEnv === 'production'
+    ? winston.format.combine(winston.format.timestamp(), winston.format.simple())
+    : winston.format.combine(winston.format.colorize(), winston.format.simple()),
+}));
 
 module.exports = logger;

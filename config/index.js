@@ -3,7 +3,7 @@ require('dotenv').config();
 const nodeEnv = process.env.NODE_ENV || 'development';
 
 const corsOrigin = process.env.FRONTEND_URL
-  ? process.env.FRONTEND_URL.split(',').map((s) => s.trim()).filter(Boolean)
+  ? process.env.FRONTEND_URL.split(',').map((s) => s.trim().replace(/\/+$/, '')).filter(Boolean)
   : nodeEnv === 'production'
     ? true
     : ['http://localhost:5173'];
@@ -55,6 +55,12 @@ module.exports = {
     fetchIntervalMinutes: parseInt(process.env.NEWS_FETCH_INTERVAL_MINUTES) || 30,
     autoPublish: process.env.NEWS_AUTO_PUBLISH === 'true',
     timezone: process.env.NEWS_DEFAULT_TIMEZONE || 'Africa/Lagos',
+  },
+
+  keepAlive: {
+    // Render sets RENDER_EXTERNAL_URL automatically; set KEEP_ALIVE=false to disable
+    url: process.env.KEEP_ALIVE === 'false' ? null : process.env.RENDER_EXTERNAL_URL,
+    intervalMinutes: parseInt(process.env.KEEP_ALIVE_INTERVAL_MINUTES) || 10,
   },
 
   rateLimit: {

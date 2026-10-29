@@ -4,8 +4,7 @@ services:
     runtime: node
     region: oregon
     plan: free
-    branch: main
-    rootDir: Backend
+    branch: master
     buildCommand: npm install
     startCommand: node server.js
     healthCheckPath: /health
