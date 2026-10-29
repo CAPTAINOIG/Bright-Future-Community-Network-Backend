@@ -16,7 +16,16 @@ const createAdmin = async () => {
       email: config.adminLogin.email.toLowerCase(),
     });
     if (existingAdmin) {
-      logger.info(`Admin already seeded: ${existingAdmin.email}`);
+      // ADMIN_PASSWORD is the source of truth — sync it if it was changed in env vars
+      const passwordMatches = await bcrypt.compare(config.adminLogin.password, existingAdmin.password);
+      if (!passwordMatches) {
+        existingAdmin.password = await bcrypt.hash(config.adminLogin.password, 10);
+        await existingAdmin.save();
+        logger.info(`Admin password updated from ADMIN_PASSWORD: ${existingAdmin.email}`);
+        console.log(`🔑 Admin password updated for ${existingAdmin.email}`);
+      } else {
+        logger.info(`Admin already seeded: ${existingAdmin.email}`);
+      }
       return existingAdmin;
     }
 
