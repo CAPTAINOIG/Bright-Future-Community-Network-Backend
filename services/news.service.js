@@ -36,7 +36,7 @@ class NewsService {
     const [news, total] = await Promise.all([
       newsModel
         .find(filter)
-        .select('-normalizedSourceUrl -sourceId -__v')
+        .select('-normalizedSourceUrl -sourceId -__v +views +likes')
         .skip(skip)
         .limit(limitNum)
         .sort(sortOptions)
@@ -118,7 +118,7 @@ class NewsService {
     }
     const sortOptions = sort === 'oldest' ? { createdAt: 1 } : { createdAt: -1 };
     const [news, total] = await Promise.all([
-      newsModel.find(filter).skip(skip).limit(limitNum).sort(sortOptions).lean(),
+      newsModel.find(filter).select('+views +likes').skip(skip).limit(limitNum).sort(sortOptions).lean(),
       newsModel.countDocuments(filter),
     ]);
     return {
@@ -349,7 +349,7 @@ class NewsService {
     }
 
     const [news, total] = await Promise.all([
-      newsModel.find(filter).skip(skip).limit(Number(limit)).sort({ createdAt: -1 }),
+      newsModel.find(filter).select('+views +likes').skip(skip).limit(Number(limit)).sort({ createdAt: -1 }).lean(),
       newsModel.countDocuments(filter),
     ]);
 
