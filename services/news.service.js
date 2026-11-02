@@ -36,7 +36,7 @@ class NewsService {
     const [news, total] = await Promise.all([
       newsModel
         .find(filter)
-        .select('-normalizedSourceUrl -sourceId -__v +views +likes')
+        .select('-normalizedSourceUrl -sourceId -__v')
         .skip(skip)
         .limit(limitNum)
         .sort(sortOptions)
@@ -374,9 +374,7 @@ class NewsService {
     return news.toJSON();
   }
 
-  /**
-   * Increment views for a news article by slug
-   */
+  //  * Increment views for a news article by slug
   async incrementNewsViews(slug) {
     if (!slug || typeof slug !== 'string') {
       const err = new Error('Invalid slug');

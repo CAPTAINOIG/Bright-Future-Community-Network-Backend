@@ -35,7 +35,6 @@ const BLOCKED_HOSTS = [
  */
 function normalizeUrl(rawUrl) {
   if (!rawUrl || typeof rawUrl !== 'string') return '';
-
   try {
     const url = new URL(rawUrl.trim());
 

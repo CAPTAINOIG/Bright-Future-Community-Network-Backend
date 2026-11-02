@@ -20,19 +20,16 @@ const {
   createNews,
   getAllNews,
   getNewsById,
+  incrementNewsViews,
   updateNews,
   deleteNews,
 } = require('../controllers/news.controller');
 
 const router = express.Router();
 
-// ──────────────────────────────────────────────
 //  ADMIN ROUTES (must be defined before :slug)
 //  All admin routes require authentication + admin role
-// ──────────────────────────────────────────────
-
 router.get('/news/admin/stats', authenticate,authorize('admin', 'superadmin'),getNewsStats);
-
 router.post(
   '/news/admin/fetch',
   authenticate,
@@ -98,17 +95,14 @@ router.patch(
   updateAdminNews,
 );
 
-// ──────────────────────────────────────────────
-//  PUBLIC ROUTES
-// ──────────────────────────────────────────────
-
 router.get('/news', getPublishedNews);
 router.get('/news/:slug', getPublishedNewsBySlug);
+router.get('/news/:id', getNewsById);
 
-// ──────────────────────────────────────────────
+//  INCREMENT NEWS VIEWS
+router.post('/news/:slug/views', incrementNewsViews);
+
 //  LEGACY ROUTES (preserved for backwards compat)
-// ──────────────────────────────────────────────
-
 router.post('/news', createNews);
 router.put('/news/:id', updateNews);
 router.delete('/news/:id', deleteNews);

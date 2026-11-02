@@ -111,10 +111,7 @@ const deleteSource = asyncHandler(async (req, res) => {
   return ResponseHandler.success(res, result, 'Source deleted successfully');
 });
 
-// ──────────────────────────────────────────────
 //  LEGACY ENDPOINTS (preserved for backwards compat)
-// ──────────────────────────────────────────────
-
 const createNews = asyncHandler(async (req, res) => {
   const result = await newsService.createNews(req.body);
   return ResponseHandler.created(res, result, 'News created successfully');
@@ -128,6 +125,11 @@ const getAllNews = asyncHandler(async (req, res) => {
 const getNewsById = asyncHandler(async (req, res) => {
   const result = await newsService.getNewsById(req.params.id);
   return ResponseHandler.success(res, result, 'News retrieved successfully');
+});
+
+const incrementNewsViews = asyncHandler(async (req, res) => {
+  const result = await newsService.incrementNewsViews(req.params.slug);
+  return ResponseHandler.success(res, result, 'News views updated successfully');
 });
 
 const updateNews = asyncHandler(async (req, res) => {
@@ -160,6 +162,7 @@ module.exports = {
   createNews,
   getAllNews,
   getNewsById,
+  incrementNewsViews,
   updateNews,
   deleteNews,
 };
