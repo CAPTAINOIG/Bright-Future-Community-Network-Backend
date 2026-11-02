@@ -55,7 +55,7 @@ class NewsService {
     };
   }
   /**
-   * Get a single published article by its slug.
+   * Get a single published article by its slug and increment views.
    */
   // This will be used in the frontend since its published news. NOTE
   async getPublishedNewsBySlug(slug) {
@@ -64,14 +64,20 @@ class NewsService {
       err.status = 400;
       throw err;
     }
-    const article = await newsModel.findOne({ slug, status: 'published' }).select('-normalizedSourceUrl -sourceId -__v').lean();
+    
+    // Find and increment views in one operation
+    const article = await newsModel.findOneAndUpdate(
+      { slug, status: 'published' },
+      { $inc: { views: 1 } },
+      { new: true }
+    ).select('-normalizedSourceUrl -sourceId -__v').lean();
+    
     if (!article) {
       const err = new Error('Article not found');
       err.status = 404;
       throw err;
     }
-    // Increment view count (fire-and-forget)
-    newsModel.findByIdAndUpdate(article._id, { $inc: { views: 1 } }).catch(() => {});
+    
     return article;
   }
 
