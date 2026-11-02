@@ -136,19 +136,6 @@ class NewsService {
     return article;
   }
 
-  async incrementNewsViews(slug) {
-    const news = await newsModel.findOneAndUpdate({ slug, status: 'published', published: true},
-      { $inc: { views: 1 }},
-      { new: true }
-    );
-    if (!news) {
-      const err = new Error('News article not found');
-      err.status = 404;
-      throw err;
-    }
-    return news;
-};
-
   /**
    * Admin: Update an article's status, category, featured state, etc.
    */
