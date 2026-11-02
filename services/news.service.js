@@ -125,10 +125,7 @@ class NewsService {
       },
     };
   }
-
-  /**
-   * Admin: Get a single article by ID for review.
-   */
+  //  * Admin: Get a single article by ID for review.
   async getAdminNewsById(id) {
     const article = await newsModel.findById(id).lean();
     if (!article) {
@@ -138,6 +135,20 @@ class NewsService {
     }
     return article;
   }
+
+  async incrementNewsViews(slug) {
+    const news = await newsModel.findOneAndUpdate({ slug, status: 'published', published: true},
+      { $inc: { views: 1 }},
+      { new: true }
+    );
+    if (!news) {
+      const err = new Error('News article not found');
+      err.status = 404;
+      throw err;
+    }
+    return news;
+};
+
   /**
    * Admin: Update an article's status, category, featured state, etc.
    */
@@ -368,6 +379,35 @@ class NewsService {
       throw err;
     }
     return news.toJSON();
+  }
+
+  /**
+   * Increment views for a news article by slug
+   */
+  async incrementNewsViews(slug) {
+    if (!slug || typeof slug !== 'string') {
+      const err = new Error('Invalid slug');
+      err.status = 400;
+      throw err;
+    }
+
+    const news = await newsModel.findOneAndUpdate(
+      { slug },
+      { $inc: { views: 1 } },
+      { new: true }
+    ).lean();
+
+    if (!news) {
+      const err = new Error('Article not found');
+      err.status = 404;
+      throw err;
+    }
+
+    return {
+      slug: news.slug,
+      views: news.views,
+      message: 'Views incremented successfully',
+    };
   }
 
   async updateNews(id, updateData) {
