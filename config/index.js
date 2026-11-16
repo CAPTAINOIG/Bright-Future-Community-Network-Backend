@@ -52,7 +52,7 @@ module.exports = {
   },
 
   news: {
-    fetchIntervalMinutes: parseInt(process.env.NEWS_FETCH_INTERVAL_MINUTES) || 30,
+    fetchIntervalMinutes: parseInt(process.env.NEWS_FETCH_INTERVAL_MINUTES) || 60,
     autoPublish: process.env.NEWS_AUTO_PUBLISH === 'true',
     timezone: process.env.NEWS_DEFAULT_TIMEZONE || 'Africa/Lagos',
   },

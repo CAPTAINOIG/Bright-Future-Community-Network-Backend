@@ -106,5 +106,5 @@ router.post('/news/:slug/views', incrementNewsViews);
 router.post('/news', createNews);
 router.put('/news/:id', updateNews);
 router.delete('/news/:id', deleteNews);
-
+  
 module.exports = router;

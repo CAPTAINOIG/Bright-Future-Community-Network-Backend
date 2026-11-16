@@ -54,9 +54,7 @@ class NewsService {
       },
     };
   }
-  /**
-   * Get a single published article by its slug and increment views.
-   */
+  //  * Get a single published article by its slug and increment views.
   // This will be used in the frontend since its published news. NOTE
   async getPublishedNewsBySlug(slug) {
     if (!slug || typeof slug !== 'string') {
@@ -64,20 +62,17 @@ class NewsService {
       err.status = 400;
       throw err;
     }
-    
     // Find and increment views in one operation
     const article = await newsModel.findOneAndUpdate(
       { slug, status: 'published' },
       { $inc: { views: 1 } },
       { new: true }
     ).select('-normalizedSourceUrl -sourceId -__v').lean();
-    
     if (!article) {
       const err = new Error('Article not found');
       err.status = 404;
       throw err;
     }
-    
     return article;
   }
 
@@ -141,10 +136,7 @@ class NewsService {
     }
     return article;
   }
-
-  /**
-   * Admin: Update an article's status, category, featured state, etc.
-   */
+  //  * Admin: Update an article's status, category, featured state, etc.
   async updateAdminNews(id, updateData) {
     const allowedFields = ['status', 'category', 'featured', 'location', 'summary', 'comment'];
     const sanitized = {};
@@ -160,11 +152,7 @@ class NewsService {
       sanitized.published = false;
     }
     const article = await newsModel.findByIdAndUpdate(
-      id,
-      { $set: sanitized },
-      { new: true, runValidators: true },
-    ).lean();
-
+      id, { $set: sanitized }, { new: true, runValidators: true }).lean();
     if (!article) {
       const err = new Error('Article not found');
       err.status = 404;
@@ -179,10 +167,8 @@ class NewsService {
         relatedId: article._id,
       }).catch((err) => logger.warn('Failed to create activity log:', err.message));
     }
-
     return article;
   }
-
   //  * Admin: Get news statistics.
   async getNewsStats() {
     const [pending, published, rejected, archived, total, featured] = await Promise.all([
@@ -205,7 +191,6 @@ class NewsService {
       sources: { total: totalSources, enabled: enabledSources },
     };
   }
-
   //  * List all configured news sources.
   async getSources() {
     const sources = await newsSourceModel.find().sort({ createdAt: -1 }).lean();

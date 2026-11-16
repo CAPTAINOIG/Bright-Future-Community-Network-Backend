@@ -1,6 +1,6 @@
 const memberModel = require('../models/member.model');
 const projectModel = require('../models/projects.model');
-const eventModel = require('../models/events.model');
+const eventModel = require('../models/event.model');
 const activityModel = require('../models/activity.model');
 const newsModel = require('../models/news.model');
 const moment = require('moment');

@@ -1,8 +1,8 @@
-const eventModel = require("../models/events.model");
+const eventModel = require("../models/event.model");
 const activityModel = require("../models/activity.model");
 
 class EventService {
-  async createEvent(eventData) {
+  async createEvent( eventData ) {
     const { title, description, date, location, status, image } = eventData;
 
     const event = await eventModel.create({

@@ -64,9 +64,8 @@ class VolunteerService {
   async getAllVolunteers(query = {}) {
     const { page = 1, limit = 10, search = '', status, community, skills } = query;
     const skip = (page - 1) * limit;
-
     const filter = {};
-    if (search) {
+    if (search.trim()) {
       filter.$or = [
         { fullName: { $regex: search, $options: 'i' } },
         { email: { $regex: search, $options: 'i' } },
@@ -81,14 +80,12 @@ class VolunteerService {
     filter.community = community;
     }
     if (skills) {
-    filter.skills = {$in: this.toArray(skills)};
+    filter.skills = { $in: this.toArray(skills) };
     }
-
     const [volunteers, total] = await Promise.all([
       volunteerModel.find(filter).skip(skip).limit(Number(limit)).sort({ createdAt: -1 }),
       volunteerModel.countDocuments(filter),
     ]);
-
     return {
       volunteers: volunteers.map((v) => v.toJSON()),
       pagination: {

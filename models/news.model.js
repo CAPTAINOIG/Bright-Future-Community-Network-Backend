@@ -74,6 +74,7 @@ const newsSchema = new mongoose.Schema({
       'health',
       'sports',
       'technology',
+      'wwe',
       'business',
       'entertainment',
       'security',

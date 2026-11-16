@@ -38,7 +38,7 @@ const CATEGORY_KEYWORDS = {
   ],
   sports: [
     'sports', 'football', 'nff', 'npfl', 'atletico', 'basketball',
-    'athlete', 'tournament', 'championship', 'match', 'league', 'wwe', 'chelsea',
+    'athlete', 'tournament', 'championship', 'match', 'league', 'chelsea',
   ],
   technology: [
     'technology', 'tech', 'digital', 'software', 'app', 'internet',
@@ -67,6 +67,9 @@ const CATEGORY_KEYWORDS = {
   infrastructure: [
     'road', 'infrastructure', 'construction', 'bridge', 'electricity',
     'power', 'water supply', 'housing', 'transport',
+  ],
+  wwe: [
+    'wwe', 'wrestling', 'wrestler', 'wrestling news',
   ],
 };
 
@@ -440,6 +443,9 @@ class NewsIngestionService {
     }
     if (text.includes('health') || text.includes('hospital') || text.includes('medical')) {
       return 'health';
+    }
+    if (text.includes('wwe') || text.includes('wrestling') || text.includes('wrestler')) {
+      return 'wwe';
     }
     if (text.includes('sport') || text.includes('football') || text.includes('athlete')) {
       return 'sports';

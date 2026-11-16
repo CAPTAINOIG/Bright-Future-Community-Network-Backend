@@ -1,4 +1,4 @@
-const eventService = require("../services/events.service");
+const eventService = require("../services/event.service");
 const ResponseHandler = require("../utils/responseHandler");
 const asyncHandler = require("../utils/asyncHandler");
 
