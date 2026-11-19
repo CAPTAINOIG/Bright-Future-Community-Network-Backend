@@ -20,6 +20,7 @@ const programRegistrationSchema = new mongoose.Schema(
       trim: true,
       lowercase: true,
       maxlength: 254,
+      unique: true,
       match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
     },
     phone: {
@@ -27,6 +28,7 @@ const programRegistrationSchema = new mongoose.Schema(
       required: true,
       trim: true,
       maxlength: 40,
+      unique: true,
     },
     community: {
       type: String,
@@ -42,6 +44,10 @@ const programRegistrationSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isActive: {
+    type: Boolean,
+    default: true,
+  },
   },
   { timestamps: true },
 );

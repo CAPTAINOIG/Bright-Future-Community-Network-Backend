@@ -7,7 +7,11 @@ const registerForProgram = asyncHandler(async (req, res) => {
   return ResponseHandler.created(res, result, 'Programme registration received');
 });
 
-const getProgramRegistrations = asyncHandler(async (req, res) => {
+const getAllProgramParticipant = asyncHandler(async (req,res) => {
+  const result = await registrationService.getAllProgramParticipants(req.query);   
+  return ResponseHandler.success(res, result, 'Programme participants retrieved successfully');
+});
+const getUserProgramRegistrations = asyncHandler(async (req, res) => {
   const result = await registrationService.getByProgram(req.params.id);
   return ResponseHandler.success(res, result, 'Programme registrations retrieved successfully');
 });
@@ -17,4 +21,4 @@ const updateAttendance = asyncHandler(async (req, res) => {
   return ResponseHandler.success(res, result, 'Attendance updated successfully');
 });
 
-module.exports = { registerForProgram, getProgramRegistrations, updateAttendance };
+module.exports = { registerForProgram, getAllProgramParticipant, getUserProgramRegistrations, updateAttendance };

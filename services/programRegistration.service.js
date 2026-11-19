@@ -29,16 +29,15 @@ class ProgramRegistrationService {
     }
 
     const { fullName, email, phone, community, consent } = registrationData;
+    const existingRegistration = await registrationModel.findOne({ email, phone });
+    if (existingRegistration) {
+      const err = new Error('Registration already exists for this programme');
+      err.status = 400;
+      throw err;
+    }
     if (
-      typeof fullName !== 'string' ||
-      !fullName.trim() ||
-      typeof email !== 'string' ||
-      !email.trim() ||
-      typeof phone !== 'string' ||
-      !phone.trim() ||
-      typeof community !== 'string' ||
-      !community.trim() ||
-      consent !== true
+      typeof fullName !== 'string' || !fullName.trim() || typeof email !== 'string' || !email.trim() ||
+      typeof phone !== 'string' || !phone.trim() || typeof community !== 'string' || !community.trim() || consent !== true
     ) {
       const err = new Error('Please provide all required details and consent to be contacted');
       err.status = 400;
@@ -53,6 +52,61 @@ class ProgramRegistrationService {
       community,
       consentAt: new Date(),
     });
+  }
+
+  async getAllProgramParticipants(query = {}) {
+    const {
+      page = 1,
+      limit = 10,
+      search = '',
+      status,
+      fullName,
+      community,
+      attended,
+      isActive,
+    } = query;
+    const skip = (page - 1) * limit;
+    const filter = {};
+
+    if (String(search).trim()) {
+      filter.$or = [
+        { fullName: { $regex: search, $options: 'i' } },
+        { community: { $regex: search, $options: 'i' } },
+        { attended: attended },
+      ];
+    }
+    if (status) {
+      filter.status = status;
+    }
+    if (isActive === 'true' || isActive === true) {
+      filter.isActive = true;
+    } else if (isActive === 'false' || isActive === false) {
+      filter.isActive = false;
+    }
+    if (fullName) {
+      filter.fullName = fullName;
+    }
+    if (community) {
+      filter.community = community;
+    }
+    if (attended) {
+      filter.attended = attended;
+    }
+
+    const [registrations, total] = await Promise.all([
+      registrationModel.find(filter).skip(skip).limit(Number(limit)).sort({ createdAt: -1 }),
+      registrationModel.countDocuments(filter),
+    ]);
+
+    return {
+      registrations: registrations.map((registration) => registration.toJSON()),
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async getByProgram(programId) {
